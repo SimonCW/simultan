@@ -1,0 +1,8 @@
+# Project specific
+/audio
+/models
+
+# Rust
+/target
+/Cargo.lock
+/.cargo
