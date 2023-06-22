@@ -1,31 +1,13 @@
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
-use whisper_rs::{self, FullParams, SamplingStrategy, WhisperContext};
+use whisper_rs::{self, FullParams, SamplingStrategy, WhisperContext, WhisperState};
 
 fn main() -> Result<(), &'static str> {
-    // ************ Setup Model
-    // Load a context and model.
-    let ctx = WhisperContext::new("models/ggml-base.en.bin").expect("failed to load model");
-    // Create a state
-    let mut state = ctx.create_state().expect("failed to create key");
-    // Create a params object for running the model.
-    // The number of past samples to consider defaults to 0.
-    let mut params = FullParams::new(SamplingStrategy::Greedy { best_of: 0 });
-
-    // Edit params as needed.
-    // Set the number of threads to use to 1.
-    params.set_n_threads(1);
-    // Enable translation.
-    params.set_translate(true);
-    // Set the language to translate to to English.
-    params.set_language(Some("en"));
-    // Disable anything that prints to stdout.
-    params.set_print_special(false);
-    params.set_print_progress(false);
-    params.set_print_realtime(false);
-    params.set_print_timestamps(false);
-
+    let model_path = Path::new("models/ggml-base.en.bin")
+        .to_str()
+        .expect("Expected to find valid unicode");
+    let (state, params) = setup_model(model_path);
     // ************ Setup Audio
     let jfk_audio = Path::new("./audio/jfk.wav");
     let mut reader = hound::WavReader::open(jfk_audio).expect("failed to open file");
@@ -87,4 +69,28 @@ fn main() -> Result<(), &'static str> {
             .expect("failed to write to file");
     }
     Ok(())
+}
+
+fn setup_model(model_path: &str) -> (WhisperState<'_>, FullParams<'_, '_>) {
+    // Load a context and model.
+    let ctx = WhisperContext::new(model_path).expect("failed to load model");
+    // Create a state
+    let mut state = ctx.create_state().expect("failed to create key");
+    // Create a params object for running the model.
+    // The number of past samples to consider defaults to 0.
+    let mut params = FullParams::new(SamplingStrategy::Greedy { best_of: 0 });
+
+    // Edit params as needed.
+    // Set the number of threads to use to 1.
+    params.set_n_threads(1);
+    // Enable translation.
+    params.set_translate(true);
+    // Set the language to translate to to English.
+    params.set_language(Some("en"));
+    // Disable anything that prints to stdout.
+    params.set_print_special(false);
+    params.set_print_progress(false);
+    params.set_print_realtime(false);
+    params.set_print_timestamps(false);
+    (state, params)
 }
